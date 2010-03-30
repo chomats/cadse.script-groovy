@@ -21,6 +21,11 @@
 						<unpackBundle>true</unpackBundle>
 						<instructions>
 							<Export-Package>fr.imag.adele.cadse.script.groovy*;version="${version.cadse}"</Export-Package>
+							<Import-Package>groovy.lang;version=!,
+ 								org.codehaus.groovy.control;version=!,
+ 								org.eclipse.core.runtime;registry=!,
+ 								org.eclipse.jface*;text=!,
+ 								*</Import-Package>
 							<Bundle-Activator>fr.imag.adele.cadse.script.groovy.ScriptGroovyActivator</Bundle-Activator>
 							<Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
 						</instructions>
