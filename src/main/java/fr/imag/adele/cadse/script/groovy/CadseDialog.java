@@ -56,8 +56,10 @@ import fr.imag.adele.cadse.si.workspace.uiplatform.swt.SWTUIPlatform;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.dialog.SWTDialog;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ic.IC_AbstractForChecked;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ic.IC_ForCheckedViewer;
+import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ic.IC_ForChooseFile;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ic.IC_TreeModel;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DCheckedListUI;
+import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DChooseFileUI;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DGridUI;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DListUI;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DSashFormUI;
@@ -76,7 +78,7 @@ public class CadseDialog extends SWTDialog {
 	protected DTabUI										_fieldMain;
 	protected DTreeModelUI									_fieldCadseRuntimes;
 	protected DCheckedListUI<IC_ForCheckedViewer>			_fieldBundles;
-	protected DGroovyEditor									_fieldCodeGroovy;
+	protected DChooseFileUI									_fieldCodeGroovy;
 
 	private CadseRuntime[][]	ret;
 
@@ -312,6 +314,10 @@ public class CadseDialog extends SWTDialog {
 		}
 
 	}
+	
+	public class IC_CodeGroovy extends IC_ForChooseFile {
+
+	}
 
 	/**
 	 * Create the dialog structure... DSashFormUI DGrillUI FieldExtends DGrillUI
@@ -325,7 +331,7 @@ public class CadseDialog extends SWTDialog {
 		this.ret = ret;
 		this._fieldCadseRuntimes = createRuntime(true);
 		this._fieldBundles = createBundles();
-		this._fieldCodeGroovy = _swtuiPlatforms.createField(_page, "#code", "Code groovy", EPosLabel.top, new MC_CodeGroovy(), null, new DGroovyEditor(), CadseGCST.DISPLAY);
+		this._fieldCodeGroovy = _swtuiPlatforms.createDChooseFileUI(_page, "#code", "Code groovy", EPosLabel.top, new MC_CodeGroovy(), new IC_CodeGroovy(), "select a groovy script");
 		MyMC_AttributesItem defaultMc = new MyMC_AttributesItem();
 
 		this._fieldMain = _swtuiPlatforms.createField(_page, "#main", "", EPosLabel.none, defaultMc, null,new DTabUI<RuningInteractionController>(),
