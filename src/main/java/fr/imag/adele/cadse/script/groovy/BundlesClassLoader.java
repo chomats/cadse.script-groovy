@@ -10,7 +10,8 @@ public class BundlesClassLoader extends ClassLoader {
 	
 	private Bundle[] _bundles;
 
-	public BundlesClassLoader(Bundle[] bundles) {
+	public BundlesClassLoader(ClassLoader parent, Bundle[] bundles) {
+		super(parent);
 		_bundles = bundles;
 	}
 

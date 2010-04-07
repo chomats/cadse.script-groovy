@@ -12,6 +12,6 @@ public class RunScriptAction extends MenuAction {
 	
 	@Override
 	public void run(IItemNode[] selection) throws CadseException {
-		CadseDialog.open();
+		CadseDialog.open(selection);
 	}
 }

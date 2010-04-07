@@ -18,25 +18,22 @@
  */
 package fr.imag.adele.cadse.script.groovy;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.PlatformUI;
 import org.osgi.framework.Bundle;
 
-import fede.workspace.tool.view.node.CategoryNode;
-import fede.workspace.tool.view.node.FilteredItemNode;
 import fede.workspace.tool.view.node.FilteredItemNodeModel;
 import fede.workspace.tool.view.node.ItemNode;
-import fede.workspace.tool.view.node.FilteredItemNode.Category;
 import fr.imag.adele.cadse.core.CadseGCST;
 import fr.imag.adele.cadse.core.CadseRuntime;
 import fr.imag.adele.cadse.core.IItemNode;
@@ -60,9 +57,6 @@ import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ic.IC_ForChooseFile;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ic.IC_TreeModel;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DCheckedListUI;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DChooseFileUI;
-import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DGridUI;
-import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DListUI;
-import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DSashFormUI;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DTabUI;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DTextUI;
 import fr.imag.adele.cadse.si.workspace.uiplatform.swt.ui.DTreeModelUI;
@@ -73,7 +67,7 @@ public class CadseDialog extends SWTDialog {
 	Item						selectedItem		= null;
 	HashSet<CadseRuntime>		selected			= new HashSet<CadseRuntime>();
 	HashSet<Bundle>				bundles				= new HashSet<Bundle>();
-
+	IPath path;
 
 	protected DTabUI										_fieldMain;
 	protected DTreeModelUI									_fieldCadseRuntimes;
@@ -81,6 +75,7 @@ public class CadseDialog extends SWTDialog {
 	protected DChooseFileUI									_fieldCodeGroovy;
 
 	private CadseRuntime[][]	ret;
+	private IItemNode[] selection;
 
 	public class MyMC_AttributesItem extends MC_AttributesItem {
 
@@ -123,6 +118,18 @@ public class CadseDialog extends SWTDialog {
 
 		@Override
 		public void doFinish(UIPlatform ui, Object monitor) throws Exception {
+			if (path == null) return;
+			
+			File file = path.toFile();
+			if (!file.exists()) {
+				IFile wf = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
+				if (wf.exists()) {
+					file = wf.getLocation().toFile();
+				}
+			}
+			if (!file.exists())
+				return;
+			RunScriptCadse.run(selection, (CadseRuntime[]) selected.toArray(new CadseRuntime[selected.size()]), (Bundle[]) bundles.toArray(new Bundle[bundles.size()]), file);
 		}
 	}
 
@@ -149,15 +156,6 @@ public class CadseDialog extends SWTDialog {
 				// en premier on rajoute les insances de cadse runtime trier par
 				// le nom
 				model.addItemFromItemTypeEntry(null, CadseGCST.CADSE, ItemShortNameComparator.INSTANCE);
-//
-//
-//				// on lie les deux category à un instance de ce Cadseruntime
-//				model.addCategories(CadseGCST.CADSE, categoryExtendsTo, categoryExtendedBy);
-//				model.addItemFromLinkTypeEntry(categoryExtendsTo, CadseGCST.CADSE_lt_EXTENDS,
-//						ItemShortNameComparator.INSTANCE, false, false);
-//				model.addItemFromLinkTypeEntry(categoryExtendedBy, CadseGCST.CADSE_lt_EXTENDS,
-//						ItemShortNameComparator.INSTANCE, false, true);
-
 			}
 			return model;
 		}
@@ -203,6 +201,12 @@ public class CadseDialog extends SWTDialog {
 
 		@Override
 		public void notifieSubValueAdded(UIField field, Object added) {
+			if (added instanceof IItemNode) {
+				IItemNode n = (IItemNode) added;
+				if (n.getItem() != null && n.getItem().getType() == CadseGCST.CADSE) {
+					selected.add((CadseRuntime) n.getItem());
+				}
+			}
 		}
 
 		@Override
@@ -225,15 +229,7 @@ public class CadseDialog extends SWTDialog {
 
 		@Override
 		public Object getValue() {
-			ArrayList<CadseRuntime> executedCadse = new ArrayList<CadseRuntime>();
-			for (CadseRuntime cadseRuntime : CadseCore.getLogicalWorkspace().getCadseRuntime()) {
-				if (cadseRuntime.isExecuted()) {
-					executedCadse.add(cadseRuntime);
-				}
-			}
-			allreadyselected = executedCadse.size();
-
-			return executedCadse.toArray(new CadseRuntime[executedCadse.size()]);
+			return new Object[0];
 		}
 
 		@Override
@@ -250,7 +246,7 @@ public class CadseDialog extends SWTDialog {
 			if (removed instanceof IItemNode) {
 				IItemNode n = (IItemNode) removed;
 				if (n.getItem() != null && n.getItem().getType() == CadseGCST.CADSE) {
-					selected.remove(n.getItem());
+					bundles.remove(n.getItem());
 				}
 			}
 		}
@@ -277,41 +273,21 @@ public class CadseDialog extends SWTDialog {
 	
 	public class MC_CodeGroovy extends AbstractModelController {
 
+		
 		public MC_CodeGroovy() {
 			super(null);
 		}
 
 		@Override
 		public Object getValue() {
-			ArrayList<CadseRuntime> executedCadse = new ArrayList<CadseRuntime>();
-			for (CadseRuntime cadseRuntime : CadseCore.getLogicalWorkspace().getCadseRuntime()) {
-				if (cadseRuntime.isExecuted()) {
-					executedCadse.add(cadseRuntime);
-				}
-			}
-			allreadyselected = executedCadse.size();
-
-			return executedCadse.toArray(new CadseRuntime[executedCadse.size()]);
+			return path;
 		}
 
 		@Override
 		public void notifieValueChanged(UIField field, Object value) {
+			path = (IPath) value;
 		}
 
-		@Override
-		public void notifieSubValueAdded(UIField field, Object added) {
-			bundles.add((Bundle) added);
-		}
-
-		@Override
-		public void notifieSubValueRemoved(UIField field, Object removed) {
-			if (removed instanceof IItemNode) {
-				IItemNode n = (IItemNode) removed;
-				if (n.getItem() != null && n.getItem().getType() == CadseGCST.CADSE) {
-					selected.remove(n.getItem());
-				}
-			}
-		}
 
 	}
 	
@@ -386,6 +362,7 @@ public class CadseDialog extends SWTDialog {
 
 	/**
 	 * Open dialog.
+	 * @param selection 
 	 * 
 	 * @param askToErase
 	 *            the ask to erase
@@ -393,11 +370,12 @@ public class CadseDialog extends SWTDialog {
 	 * @return true, if successful
 	 * 
 	 */
-	static public void open() {
+	static public void open(IItemNode[] selection) {
 		final CadseRuntime[][] ret = new CadseRuntime[1][];
 		ret[0] = null;
 		CadseDialog d = new CadseDialog(new SWTUIPlatform(), ret);
-		d.open(null);
+		d.selection = selection;
+		d.open((Shell)null);
 	}
 
 	/**
