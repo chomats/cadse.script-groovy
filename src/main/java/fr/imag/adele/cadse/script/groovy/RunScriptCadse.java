@@ -42,7 +42,7 @@ public class RunScriptCadse {
 				}
 			}
 		}
-		bundles.addAll(Arrays.asList(bundlesLibs));
+		bundles.addAll(Arrays.asList(bundlesLibs));// find bundles org.codehaus.groovy
 		
 		ClassLoader parent = new BundlesClassLoader(RunScriptCadse.class.getClassLoader(), (Bundle[]) bundles.toArray(new Bundle[bundles.size()]));
 		GroovyClassLoader loader = new GroovyClassLoader(parent);
